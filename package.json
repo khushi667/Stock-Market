@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "apexcharts": "^3.51.0",
+    "react-apexcharts": "^1.4.1",
+    "react-router-dom": "^6.26.0"
+  }
+}
