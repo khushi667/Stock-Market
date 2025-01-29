@@ -1,20 +1,27 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import StockPage from './dashboard/stockPage';
+import ApexChart from './dashboard/stockPage';
+import StockData from './dashboard/stockData';
 
 // DashboardPage component
 function DashboardPage() {
   return <h1>Welcome to the Dashboard</h1>;
 }
 
+// HomePage component
+function HomePage() {
+  return <h1>Home Page</h1>;
+}
+
+// App component
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Define a route for the home page */}
-        <Route path="/" element={<h1>Home Page</h1>} />  {/* Home page route */}
+        <Route path="/" element={<HomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/stocks" element={<StockPage />} />
+        <Route path="/stocks" element={<ApexChart />} /> 
+        <Route path="/Stock" element={<StockData />} />
       </Routes>
     </Router>
   );

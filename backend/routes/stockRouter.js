@@ -4,14 +4,39 @@ import express from 'express';
 
 const router = express.Router();
 
-const symbols = [
-  "IBM", "TCS.NS"
-];
+const symbols = ["IBM"];
+router.get('/fetch-stocks', async (req, res) => {
+  const client = new MongoClient("mongodb+srv://khushimis03:4U7ssoJl9DHjI9ol@cluster0.dhmw7.mongodb.net");
+  const db = client.db("stockVista");
+  const stockCollection = db.collection("stocks");
+
+  const stock_data = await Promise.all(
+    symbols.map(async (symbol) => {
+      const data = await stockCollection.find({symbol: symbol }).sort({ date: -1 }).limit(30).toArray();
+
+        const seenDates = new Set();
+        const filteredData = data.filter(item => {
+        const date = new Date(item.date).toISOString().split('T')[0]; 
+          if (seenDates.has(date)) {
+            return false; 
+          } else {
+            seenDates.add(date); 
+            return true;
+          }
+        });
+      return filteredData; 
+    })
+  );
+
+  console.log(stock_data[0].length);
+  res.json(stock_data[0]);
+});
+
+
+
 
 const uri = "mongodb+srv://khushimis03:4U7ssoJl9DHjI9ol@cluster0.dhmw7.mongodb.net";
-
-// Route to fetch stock data, store it, and then provide it to frontend
-router.get('/fetch-stocks', async (req, res) => {
+router.get('/fetch-store-stocks', async (req, res) => {
   const client = new MongoClient(uri);
 
   try {
@@ -21,24 +46,26 @@ router.get('/fetch-stocks', async (req, res) => {
     const db = client.db("stockVista");
     const stockCollection = db.collection("stocks");
 
+    // Create unique index for symbol and date if not already created (only once, on startup)
+    await stockCollection.createIndex({ symbol: 1, date: 1 }, { unique: true });
+
     console.log("Fetching and storing stock data...");
 
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 15); // Fetch the last 15 days of stock data
+    startDate.setDate(endDate.getDate() - 300);
 
-    // Fetch stock data for each symbol
+    // Fetch and upsert stock data for each symbol
     const promises = symbols.map(async (symbol) => {
       try {
         const historicalData = await yahooFinance.historical(symbol, {
           period1: startDate.toISOString().split("T")[0],
         });
 
-        // Store each day's stock data in the database
         for (const day of historicalData) {
           const stockDocument = {
             symbol,
-            date: new Date(day.date),
+            date: new Date(day.date).setMilliseconds(0),
             open: day.open,
             high: day.high,
             low: day.low,
@@ -47,29 +74,30 @@ router.get('/fetch-stocks', async (req, res) => {
           };
 
           console.log(`Upserting data for ${symbol} on ${day.date}`);
-          await stockCollection.updateOne(
-            { symbol, date: stockDocument.date },
-            { $set: stockDocument },
-            { upsert: true }
-          );
+
+          try {
+            // Attempt to upsert the data into the collection
+            await stockCollection.updateOne(
+              { symbol, date: stockDocument.date },
+              { $set: stockDocument },
+              { upsert: true }
+            );
+          } catch (error) {
+            if (error.code === 11000) {
+              // Duplicate key error (index violation), handle gracefully
+              console.log(`Duplicate found for ${symbol} on ${day.date}. Skipping.`);
+            } else {
+              console.error(`Error upserting data for ${symbol} on ${day.date}:`, error.message);
+            }
+          }
         }
       } catch (error) {
         console.error(`Error fetching data for ${symbol}:`, error.message);
       }
     });
 
-    // Wait for all data fetch and upsert operations to complete
     await Promise.all(promises);
     console.log("Stock data saved successfully.");
-
-    // Fetch today's stock data from the database
-    const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
-    const todayStocks = await stockCollection.find({
-      date: { $gte: new Date(`${today}T00:00:00Z`) }
-    }).toArray();
-
-    res.status(200).json(todayStocks); // Return today's stock data
-
   } catch (error) {
     console.error("Error fetching or saving stock data:", error.message);
     res.status(500).send(`Error fetching or saving stock data: ${error.message}`);
