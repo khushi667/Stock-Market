@@ -42,40 +42,38 @@ function ApexChart() {
 
     useEffect(() => {
         const fetchStockData = async () => {
-
-                const res = await fetch('http://localhost:5000/api/fetch-stocks');
-                const data = await res.json();
+            const res = await fetch('http://localhost:5000/api/fetch-stocks');
+            const data = await res.json();
                 // console.log(data);
 
-                const ibmData = [];
-                const tcsData = [];
-                const categories = [];
+            const ibmData = [];
+            const tcsData = [];
+            const categories = [];
 
-                const tenDaysAgo = new Date();
-                tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-                const tenDaysAgoFormatted = tenDaysAgo.toISOString().split('T')[0];
-
-                data.forEach(item => {
-                    const formattedDate = item[0].date;
-
-                    if (formattedDate === tenDaysAgoFormatted) {
-                        categories.push(formattedDate);
+            const tenDaysAgo = new Date();
+            tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+            const tenDaysAgoFormatted = tenDaysAgo.toISOString().split('T')[0];
+            // console.log(tenDaysAgoFormatted);
 
 
-                        if (item[0]['symbol'] === 'IBM') {
-                            ibmData.push(parseFloat(item.close).toFixed(2));
-                        }
+            data.forEach(item => {
 
-                        if (item[1]['symbol'] === 'TCS.NS') {
-                            tcsData.push(parseFloat(item.close).toFixed(2));
-                        }
-                    }
-                });
+                // IBM symbol
+                if (item[0].symbol === 'IBM') {
+                    ibmData.push(parseFloat(item[0].close).toFixed(2));
+                }
+                //TCS symbol
+                if (item[1].symbol === 'TCS.NS') {
+                    tcsData.push(parseFloat(item[0].close).toFixed(2));
+                }
+            });
+            categories.push(tenDaysAgoFormatted);
 
-                console.log('IBM Data:', ibmData);
-                console.log('TCS Data:', tcsData);
-                console.log('Categories:', categories);
+            console.log('IBM Data:', ibmData);
+            console.log('TCS Data:', tcsData);
+            console.log('Categories:', categories);
 
+            
                 setState(prevState => ({
                     ...prevState,
                     series: [
