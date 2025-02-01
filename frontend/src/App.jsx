@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ApexChart from './dashboard/stockPage';
-import StockData from './dashboard/stockData';
+import ApexChart from './dashboard/stockData';
 
 // DashboardPage component
 function DashboardPage() {
@@ -21,7 +20,6 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/stocks" element={<ApexChart />} /> 
-        <Route path="/Stock" element={<StockData />} />
       </Routes>
     </Router>
   );
