@@ -15,27 +15,11 @@ function ApexChart() {
         ],
         options: {
             chart: {
-                height: 350,
+                height: 550,
                 type: 'line',
             },
             title: {
                 text: 'IBM & TCS Stock Price (10 Days Ago)',
-            },
-            xaxis: {
-                categories: [], // Will be updated dynamically
-                title: {
-                    text: 'Date',
-                },
-            },
-            yaxis: {
-                title: {
-                    text: 'Stock Price (USD)',
-                },
-            },
-            tooltip: {
-                x: {
-                    format: 'yyyy-MM-dd',
-                },
             },
         },
     });
@@ -44,56 +28,48 @@ function ApexChart() {
         const fetchStockData = async () => {
             const res = await fetch('http://localhost:5000/api/fetch-stocks');
             const data = await res.json();
-                // console.log(data);
+            console.log("Raw Data:", data);
 
             const ibmData = [];
             const tcsData = [];
             const categories = [];
 
-            const tenDaysAgo = new Date();
-            tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-            const tenDaysAgoFormatted = tenDaysAgo.toISOString().split('T')[0];
-            // console.log(tenDaysAgoFormatted);
+            // Check data structure
+            const ibmArray = data[0];
+            const tcsArray = data[1];
 
-
-            data.forEach(item => {
-
-                // IBM symbol
-                if (item[0].symbol === 'IBM') {
-                    ibmData.push(parseFloat(item[0].close).toFixed(2));
+            // Ensure 10 data points for IBM and TCS
+            for (let i = 0; i < ibmArray.length; i++) {
+                if (ibmArray[i]) {
+                    ibmData.push(parseFloat(ibmArray[i].close).toFixed(2));
+                    const formattedDate = new Date(ibmArray[i].date).toISOString().split('T')[0];
+                    categories.push(formattedDate);
                 }
-                //TCS symbol
-                if (item[1].symbol === 'TCS.NS') {
-                    tcsData.push(parseFloat(item[0].close).toFixed(2));
+                if (tcsArray[i]) {
+                    tcsData.push(parseFloat(tcsArray[i].close).toFixed(2));
                 }
-            });
-            categories.push(tenDaysAgoFormatted);
+            }
 
-            console.log('IBM Data:', ibmData);
-            console.log('TCS Data:', tcsData);
-            console.log('Categories:', categories);
+            console.log("Updating chart with state:");
+            console.log("Categories:", categories);
+            console.log("IBM Data:", ibmData);
+            console.log("TCS Data:", tcsData);
 
-            
-                setState(prevState => ({
-                    ...prevState,
-                    series: [
-                        {
-                            name: "IBM Stock Price",
-                            data: ibmData,
-                        },
-                        {
-                            name: "TCS Stock Price",
-                            data: tcsData,
-                        },
-                    ],
-                    options: {
-                        ...prevState.options,
-                        xaxis: {
-                            categories: categories, 
+            setState(prevState => ({ 
+                series: [
+                    // { name: "IBM Stock Price", data: ibmData },
+                    { name: "TCS Stock Price", data: tcsData },
+                ],
+                options: {
+                    ...prevState.options,
+                    xaxis: {
+                        categories: categories,
+                        title: {
+                            text: 'Date',
                         },
                     },
-                }));
-
+                },
+            }));
         };
 
         fetchStockData();
@@ -101,7 +77,7 @@ function ApexChart() {
 
     return (
         <div id="chart">
-            <ReactApexChart options={state.options} series={state.series} type="line" height={350} />
+            <ReactApexChart options={state.options} series={state.series} type="line" height={550} />
         </div>
     );
 }

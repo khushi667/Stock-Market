@@ -12,7 +12,7 @@ router.get('/fetch-stocks', async (req, res) => {
 
         const stock_data = await Promise.all(
             symbols.map(async (symbol) => {
-                return await stockCollection.find({ symbol }).sort({ date: -1 }).limit(30).toArray();
+                return await stockCollection.find({ symbol }).sort({ date: -1 }).toArray();
             })
         );
         res.json(stock_data);
